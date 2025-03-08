@@ -1,25 +1,23 @@
 import pandas as pd
 import json
-import uuid
-from json import JSONDecoder
 import traceback
 
-# 1. Configuración inicial
-class CustomJSONDecoder(JSONDecoder):
+# 1. Configuración del parser JSON
+class CustomJSONDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
         super().__init__(object_hook=self.custom_hook, *args, **kwargs)
     
     def custom_hook(self, dct):
         return {k: v if v != 'null' else None for k, v in dct.items()}
 
-# 2. Función de parseo ultra-robusta
+# 2. Parseo seguro de JSON
 def safe_json_parse(json_str):
     if pd.isna(json_str):
         return []
     
     attempts = [
-        {'replace': ("'", '"'), 'fix_unicode': True},  # Intento 1: Comillas simples
-        {'replace': [], 'fix_unicode': False},         # Intento 2: Datos crudos
+        {'replace': ("'", '"'), 'fix_unicode': True},
+        {'replace': [], 'fix_unicode': False},
     ]
     
     for attempt in attempts:
@@ -38,31 +36,7 @@ def safe_json_parse(json_str):
     print(f"Error grave en JSON: {json_str[:100]}... (longitud: {len(json_str)})")
     return []
 
-# 3. Sistema de IDs único mejorado
-class ActorRegistry:
-    def __init__(self):
-        self.registry = {}
-    
-    def get_id(self, name):
-        if not name:
-            return None
-        
-        # Normalización avanzada de nombres
-        clean_name = ' '.join(name.strip().title().split())
-        if not clean_name:
-            return None
-        
-        if clean_name not in self.registry:
-            self.registry[clean_name] = str(uuid.uuid5(uuid.NAMESPACE_DNS, clean_name))[:10]
-        
-        return {
-            "id": self.registry[clean_name],
-            "name": clean_name
-        }
-
-actor_registry = ActorRegistry()
-
-# 4. Procesamiento de actores con registro detallado
+# 3. Procesamiento de actores (usando ID original)
 def process_cast(cast_str):
     try:
         cast = safe_json_parse(cast_str)
@@ -72,10 +46,10 @@ def process_cast(cast_str):
         valid_actors = []
         for entry in cast:
             try:
-                actor_info = actor_registry.get_id(entry.get('name'))
-                if actor_info and 'order' in entry:
+                if 'id' in entry and 'name' in entry:  # Usar ID existente
                     valid_actors.append({
-                        **actor_info,
+                        "id": str(entry['id']),
+                        "name": ' '.join(entry['name'].strip().title().split()),
                         "order": int(entry['order']) if str(entry['order']).isdigit() else 999
                     })
             except Exception as e:
@@ -89,7 +63,7 @@ def process_cast(cast_str):
         traceback.print_exc()
         return []
 
-# 5. Procesamiento de director con validación exhaustiva
+# 4. Procesamiento de director
 def process_crew(crew_str):
     try:
         crew = safe_json_parse(crew_str)
@@ -109,7 +83,7 @@ def process_crew(crew_str):
         print(f"Error en crew: {str(e)}")
         return None
 
-# 6. Procesamiento principal
+# 5. Procesamiento principal
 def main():
     # Cargar datos
     df = pd.read_csv("data/tmdb_5000_credits.csv")
@@ -121,16 +95,19 @@ def main():
     # Guardar resultados
     df[['movie_id', 'title', 'actors', 'director']].to_csv("movies_final.csv", index=False)
     
-    # Guardar registro de actores
-    pd.DataFrame(
-        [{"id": v, "name": k} for k, v in actor_registry.registry.items()]
-    ).to_csv("actors_database.csv", index=False)
+    # Generar base de datos de actores (sin IDs generados)
+    all_actors = []
+    for actors_list in df['actors'].apply(json.loads):
+        all_actors.extend([{"id": a["id"], "name": a["name"]} for a in actors_list])
+    
+    actors_df = pd.DataFrame(all_actors).drop_duplicates()
+    actors_df.to_csv("actors_database.csv", index=False)
     
     # Reporte final
     print("\n=== Reporte final ===")
     print(f"Total películas procesadas: {len(df)}")
     print(f"Películas sin director: {df['director'].isna().sum()}")
-    print(f"Actores únicos registrados: {len(actor_registry.registry)}")
+    print(f"Actores únicos registrados: {len(actors_df)}")
     print("\nEjemplo de datos:")
     print(df.sample(2)[['title', 'director', 'actors']])
 
