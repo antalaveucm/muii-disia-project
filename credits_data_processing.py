@@ -93,7 +93,7 @@ def main():
     df['director'] = df['crew'].apply(process_crew)
     
     # Guardar resultados
-    df[['movie_id', 'title', 'actors', 'director']].to_csv("movies_final.csv", index=False)
+    df[['movie_id', 'title', 'actors', 'director']].to_csv("credits_final.csv", index=False)
     
     # Generar base de datos de actores (sin IDs generados)
     all_actors = []
