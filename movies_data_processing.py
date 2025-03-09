@@ -147,7 +147,7 @@ def main():
         for features_list in df_movies[feature]:
             all_features.extend([{"id": a["id"], "name": a["name"]} for a in features_list])
         features_df = pd.DataFrame(all_features).drop_duplicates()
-        features_df.to_csv(str(feature)+'_database.csv', index=False)
+        features_df.to_csv('output_data/'+str(feature)+'_database.csv', index=False)
         #Solo nos interesan las 5 primeras ids de las variables.
         df_movies[feature] = df_movies[feature].apply(get_list, n=5)
         
@@ -159,7 +159,7 @@ def main():
     df_movies['weight_rating'] = round(weight_rating, 2)
     
     # Guardar resultados
-    df_movies.to_csv("movies_data_final.csv", index=False)
+    df_movies.to_csv('output_data/movies_data_final.csv', index=False)
 
 if __name__ == "__main__":
     main()
