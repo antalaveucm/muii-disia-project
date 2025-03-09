@@ -14,12 +14,14 @@ def get_list(x, n):
     return []
 
 # Creamos la sopa de metadatos que utilizaremos para medir la similitud entre películas
-def create_soup(x, features):
+def create_soup(x):
+    features = ['keywords', 'genres', 'actors']
     soup = ''
     for feature in features:
         for e in x[feature]:
             value = feature[:3]+str(e)
             soup += value + ' '
+    soup += ' ' + str.lower(x['director'].replace(" ", ""))
     return soup
 
 # Configuración del parser JSON
@@ -124,7 +126,7 @@ def main():
     df_movies = df.merge(df_credits, on='id', how='left')
 
     #Eliminación de variables no deseadas
-    var_no_deseadas = ['budget','homepage','original_language','original_title','overview',"revenue",'production_companies','production_countries','tagline']
+    var_no_deseadas = ['budget','homepage','original_language','original_title','production_companies','production_countries','revenue','spoken_languages','tagline']
     df_movies.drop(columns=var_no_deseadas, inplace=True)
     
     # Procesar películas
@@ -151,7 +153,7 @@ def main():
         
     # Crear nuevas variables para las películas
     # Metadatos juntados para valorar la similitud entre películas
-    df_movies['metadata_soup'] = df_movies.apply(create_soup, features=features, axis= 1)
+    df_movies['metadata_soup'] = df_movies.apply(create_soup, axis= 1)
     # Valoración ponderada por cantidad de votos
     weight_rating = (df_movies['vote_count']/(df_movies['vote_count']+min_votes))*df_movies['vote_average'] + (min_votes/(df_movies['vote_count']+min_votes))*average_rating_movies
     df_movies['weight_rating'] = round(weight_rating, 2)
