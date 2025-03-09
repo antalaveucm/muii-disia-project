@@ -1,5 +1,6 @@
 import pandas as pd
 import json
+from ast import literal_eval
 import traceback
 
 def get_list(x, n):
@@ -141,7 +142,7 @@ def main():
     features = ['keywords', 'genres', 'actors']
     for feature in features:
         #Parsear el string a su objeto de python correspondiente (lista, diccionario, etc)
-        df_movies[feature] = df_movies[feature].apply(json.loads)
+        df_movies[feature] = df_movies[feature].apply(literal_eval)
         # Crear base de datos para saber que significa cada identificador
         all_features = []
         for features_list in df_movies[feature]:
@@ -149,7 +150,7 @@ def main():
         features_df = pd.DataFrame(all_features).drop_duplicates()
         features_df.to_csv('output_data/'+str(feature)+'_database.csv', index=False)
         #Solo nos interesan las 5 primeras ids de las variables.
-        df_movies[feature] = df_movies[feature].apply(get_list, n=5)
+        df_movies[feature] = df_movies[feature].apply(get_list, n=0)
         
     # Crear nuevas variables para las películas
     # Metadatos juntados para valorar la similitud entre películas
