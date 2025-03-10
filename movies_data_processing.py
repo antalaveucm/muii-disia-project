@@ -140,7 +140,6 @@ def main():
     df_movies.drop(df_movies[df_movies['vote_count']<min_votes].index, inplace=True)
     
     # Eliminar valores nulos, si tuvieran
-    df_movies['runtime'].fillna(df_movies['runtime'].median(), inplace = True)
     df_movies['vote_average'].fillna(average_rating_movies, inplace = True)
     df_movies['overview'].fillna('No description available', inplace = True)
 
