@@ -129,6 +129,7 @@ def main():
     #Eliminación de variables no deseadas
     var_no_deseadas = ['budget','homepage','original_language','original_title','production_companies','production_countries','revenue','spoken_languages','tagline']
     df_movies.drop(columns=var_no_deseadas, inplace=True)
+
     
     # Procesar películas
     # No utilizaremos datos de películas que todavia no estan disponibles
@@ -137,6 +138,11 @@ def main():
     min_votes = df_movies['vote_count'].quantile(0.9) # umbral minimo de votos (90% de las peliculas alcanzan este número de votos)
     # Las peliculas que no tengan una cantidad de votos minima tampoco se tendran en cuenta para las recomendaciones.
     df_movies.drop(df_movies[df_movies['vote_count']<min_votes].index, inplace=True)
+    
+    # Eliminar valores nulos, si tuvieran
+    df_movies['runtime'].fillna(df_movies['runtime'].median(), inplace = True)
+    df_movies['vote_average'].fillna(average_rating_movies, inplace = True)
+    df_movies['overview'].fillna('No description available', inplace = True)
 
     # Transformar los valores de las variables.
     features = ['keywords', 'genres', 'actors']
