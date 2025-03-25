@@ -15,14 +15,20 @@ def get_list(x, n):
     return []
 
 # Creamos la sopa de metadatos que utilizaremos para medir la similitud entre películas
-def create_soup(x):
+def create_soup(x: pd.DataFrame):
     features = ['keywords', 'genres', 'actors']
     soup = ''
     for feature in features:
-        for e in x[feature]:
-            value = feature[:3]+str(e)
-            soup += value + ' '
-    soup += ' ' + str.lower(x['director'].replace(" ", ""))
+        if feature == "actors":
+            for e in x[feature][:3]:
+                value = feature[:3]+str(e)
+                soup += value + ' '
+        else:
+            for e in x[feature]:
+                value = feature[:3]+str(e)
+                soup += value + ' '
+    if x['director'] is not None:
+        soup += ' ' + str.lower(x['director'].replace(" ", ""))
     return soup
 
 # Configuración del parser JSON
@@ -135,13 +141,16 @@ def main():
     # No utilizaremos datos de películas que todavia no estan disponibles
     df_movies.drop(df_movies[df_movies['status']!='Released'].index, inplace=True)
     average_rating_movies = df_movies['vote_average'].mean() # media global de todas las películas
-    min_votes = df_movies['vote_count'].quantile(0.9) # umbral minimo de votos (90% de las peliculas alcanzan este número de votos)
+    min_votes = df_movies['vote_count'].quantile(0.1) # umbral minimo de votos (90% de las peliculas superan este número de votos)
     # Las peliculas que no tengan una cantidad de votos minima tampoco se tendran en cuenta para las recomendaciones.
     df_movies.drop(df_movies[df_movies['vote_count']<min_votes].index, inplace=True)
     
     # Eliminar valores nulos, si tuvieran
     df_movies['vote_average'].fillna(average_rating_movies, inplace = True)
     df_movies['overview'].fillna('No description available', inplace = True)
+
+    # Normalizar los valores de popularidad
+    df_movies['popularity'] = df_movies['popularity'].apply(lambda x: x / df_movies['popularity'].max())
 
     # Transformar los valores de las variables.
     features = ['keywords', 'genres', 'actors']
