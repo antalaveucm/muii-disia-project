@@ -8,8 +8,8 @@ def main():
     df_genres = pd.read_csv("output_data/genres_database.csv")
     df_keywords = pd.read_csv("output_data/keywords_database.csv")
     # Escogemos las peliculas segun los gustos de este usuario
-    genre_filters = ['Action', 'Adventure', 'Animation']
-    keyword_filters = ['pirate', 'shipwreck']
+    genre_filters = ['Action', 'Adventure', 'Animation', 'Drama', 'Science Fiction']
+    keyword_filters = ['pirate', 'shipwreck', 'alien', 'escape']
     genres_ids = df_genres[df_genres['name'].apply(lambda x: any(val in x for val in genre_filters))]
     keywords_ids = df_keywords[df_keywords['name'].apply(lambda x: any(val in x for val in keyword_filters))]
     genres_ids = genres_ids['id'].to_list()
