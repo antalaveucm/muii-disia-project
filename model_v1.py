@@ -109,7 +109,7 @@ class Recommender:
             sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
             
             # Mezclar similitud, weight_rating y preferencias del usuario
-            movie_indices = [i[0] for i in sim_scores[1:n*100]]
+            movie_indices = [i[0] for i in sim_scores[1:n*2]]
             for i in movie_indices:
                 user_rating = 1
                 if isinstance(user_movies,pd.DataFrame):
