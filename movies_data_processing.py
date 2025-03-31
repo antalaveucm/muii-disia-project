@@ -146,8 +146,8 @@ def main():
     df_movies.drop(df_movies[df_movies['vote_count']<min_votes].index, inplace=True)
     
     # Eliminar valores nulos, si tuvieran
-    df_movies['vote_average'].fillna(average_rating_movies, inplace = True)
-    df_movies['overview'].fillna('No description available', inplace = True)
+    df_movies['vote_average'] = df_movies['vote_average'].fillna(average_rating_movies)
+    df_movies['overview'] = df_movies['overview'].fillna('No description available')
 
     # Normalizar los valores de popularidad
     df_movies['popularity'] = df_movies['popularity'].apply(lambda x: x / df_movies['popularity'].max())
