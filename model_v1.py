@@ -2,6 +2,15 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+from sqlalchemy import create_engine
+
+uid = 'database_admin'
+pwd = '1234'
+server = 'localhost'
+database = 'movies_recomender'
+
+engine = create_engine(f'postgresql+psycopg2://{uid}:{pwd}@{server}:5432/{database}')
+
 # # Cargar datos
 # movies_df = pd.read_csv("output_data/movies_data_final.csv")
 # genres_df = pd.read_csv("output_data/genres_database.csv")
@@ -38,19 +47,25 @@ class Recommender:
     @property
     def movies_df(self):
         if self._movies_df is None:
-            self._movies_df = pd.read_csv(DATA_PATH + "movies_data_final.csv")
+            sql = "SELECT * FROM movies;"
+            self._movies_df = pd.read_sql_query(sql, engine)
+            # self._movies_df = pd.read_csv(DATA_PATH + "movies_data_final.csv")
         return self._movies_df
     
     @property
     def genres_df(self):
         if self._genres_df is None:
-            self._genres_df = pd.read_csv(DATA_PATH + "genres_database.csv")
+            sql = "SELECT * FROM genres;"
+            self._genres_df = pd.read_sql_query(sql, engine)
+            # self._genres_df = pd.read_csv(DATA_PATH + "genres_database.csv")
         return self._genres_df
 
     @property
     def actors_df(self):
         if self._actors_df is None:
-            self._actors_df = pd.read_csv(DATA_PATH + "actors_database.csv")
+            sql = "SELECT * FROM actors;"
+            self._actors_df = pd.read_sql_query(sql, engine)
+            # self._actors_df = pd.read_csv(DATA_PATH + "actors_database.csv")
         return self._actors_df
     
     @property
@@ -73,12 +88,17 @@ class Recommender:
             self._cosine_sim = cosine_similarity(self._tfidf_matrix, self._tfidf_matrix)
         return self._cosine_sim
     
-    def _convert_genres(self, genre_str):
+    def _convert_genres(self, genre_str: str):
         return [self.genre_map[int(g)] if g.isdigit() else '' for g in genre_str.strip("[]").replace("'", "").split(", ")]
 
-    def _convert_actors(self, actor_str):
+    def _convert_actors(self, actor_str: str):
         return [self.actor_map[int(a)] if a.isdigit() else '' for a in actor_str.strip("[]").replace("'", "").split(", ")]
+    
+    def _convert_genres(self, genre_list: list):
+        return [self.genre_map[int(g)] for g in genre_list]
 
+    def _convert_actors(self, actor_list: list):
+        return [self.actor_map[int(a)] for a in actor_list]
     
     def recommend_movies(self, user_id, title=None, n=10, content_weight=0.7, rating_weight=0.2, popularity_weight=0.1):
         user_movies=None
@@ -90,16 +110,30 @@ class Recommender:
                 return f"La película {title} no está en la base de datos"
         else:
             # Obtener películas mejor valoradas por el usuario
-            user_df = pd.read_csv(DATA_PATH + "user{user_id}_data.csv".format(user_id = user_id))
+            sql = "SELECT * FROM users_watch_history WHERE user_id = %(user_id)s;"
+            user_df = pd.read_sql_query(sql, engine, params={"user_id": user_id})
+            # user_df = pd.read_csv(DATA_PATH + "user{user_id}_data.csv".format(user_id = user_id))
             user_movies = user_df[user_df['visualized'] > 0.7]
+            user_movies = user_movies.rename(columns={'movie_id': 'id'})
             # Visualizar las películas que ha visto el usuario para valorar si las recomendaciones son correctas
             print("\n------Películas del usuario------")
             user_movie_list = self.movies_df[self.movies_df['id'].isin(user_movies['id'])][['id','title','genres', 'overview']]
             user_movie_list = pd.merge(user_movie_list, user_movies, how='inner', on=['id'])
             user_movie_list['genres_names'] = user_movie_list['genres'].apply(self._convert_genres)
-            print(user_movie_list[['id','title', 'genres_names', 'overview', 'vote']])
+            print(user_movie_list)
             if user_movies.empty:
-                return "No hay suficientes datos del usuario."
+                # Si el usuario no tiene datos de películas vistas, le recomendamos películas según su calidad y popularidad global, priorizando la calidad.
+                user_recommendations = self.movies_df
+                user_recommendations['score'] = user_recommendations['popularity'] * 0.2 + (user_recommendations['weight_rating']/self.movies_df['weight_rating'].max()) * 0.8
+                user_recommendations = user_recommendations.sort_values(by='score', ascending=False)[:n]
+                user_recommendations['genres_names'] = user_recommendations['genres'].apply(
+                    self._convert_genres
+                )
+                user_recommendations['actors_names'] = user_recommendations['actors'].apply(
+                    self._convert_actors
+                )
+                result = user_recommendations[['id','title', 'genres_names', 'actors_names', 'overview', 'vote_average']]
+                return result
             #idx = user_movies.sample(1).index[0]
             ids = self.movies_df[self.movies_df['id'].isin(user_movies['id'])].index
         
