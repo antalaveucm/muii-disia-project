@@ -120,7 +120,7 @@ class Recommender:
             user_movie_list = self.movies_df[self.movies_df['id'].isin(user_movies['id'])][['id','title','genres', 'overview']]
             user_movie_list = pd.merge(user_movie_list, user_movies, how='inner', on=['id'])
             user_movie_list['genres_names'] = user_movie_list['genres'].apply(self._convert_genres)
-            print(user_movie_list)
+            print(user_movie_list[['id','title', 'genres_names', 'overview', 'vote']])
             if user_movies.empty:
                 # Si el usuario no tiene datos de películas vistas, le recomendamos películas según su calidad y popularidad global, priorizando la calidad.
                 user_recommendations = self.movies_df
@@ -150,16 +150,16 @@ class Recommender:
                     user_vote = user_movies[user_movies['id']==self.movies_df.iloc[idx]['id']]['vote'].iloc[0]
                     if user_vote:
                         user_rating = user_vote/6
-                score = (self.cosine_sim[idx][i] * content_weight * user_rating + 
+            score = (self.cosine_sim[idx][i] * content_weight * user_rating + 
                         self.movies_df.iloc[i]['weight_rating']/self.movies_df['weight_rating'].max() * rating_weight + self.movies_df.iloc[i]['popularity'] * popularity_weight)
-                
-                # Si se recomienda una pelicula a partir de varias nos quedamos con el mejor score
-                recommendation = recommendations.get(i)
-                if(recommendation is None):
-                    recommendations[i] = (i, score)
-                else:
-                    recommendations[i] = (i, max(recommendation[1], score))
-        
+            
+            # Si se recomienda una pelicula a partir de varias nos quedamos con el mejor score
+            recommendation = recommendations.get(i)
+            if(recommendation is None):
+                recommendations[i] = (i, score)
+            else:
+                recommendations[i] = (i, max(recommendation[1], score))   
+
         recommendations = sorted(recommendations.values(), key=lambda x: x[1], reverse=True)[:n]
             
         user_recommendations = self.movies_df[['id','title', 'genres', 'actors', 'overview', 'vote_average']].iloc[[i[0] for i in recommendations]]
@@ -184,7 +184,7 @@ def main():
     # Ejemplo: Recomendar basado en "Avatar" o preferencias del usuario
     print(recommender.recommend_movies(user_id=None, title='Avatar')) 
     # Usa las películas que el usuario ha visto
-    print(recommender.recommend_movies(user_id=2))  # Usa las películas que el usuario ha visto
+    print(recommender.recommend_movies(user_id=1))  # Usa las películas que el usuario ha visto
 
 if __name__ == "__main__":
     main()
