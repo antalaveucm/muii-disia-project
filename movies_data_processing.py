@@ -3,6 +3,16 @@ import json
 from ast import literal_eval
 import traceback
 
+from sqlalchemy import create_engine, text
+import sqlalchemy.types as sqltypes
+
+uid = 'database_admin'
+pwd = '1234'
+server = 'localhost'
+database = 'movies_recomender'
+
+engine = create_engine(f'postgresql+psycopg2://{uid}:{pwd}@{server}:5432/{database}')
+
 def get_list(x, n):
     if isinstance(x, list):
         names = [i['id'] for i in x]
@@ -162,8 +172,17 @@ def main():
         for features_list in df_movies[feature]:
             all_features.extend([{"id": a["id"], "name": a["name"]} for a in features_list])
         features_df = pd.DataFrame(all_features).drop_duplicates()
-        features_df.to_csv('output_data/'+str(feature)+'_database.csv', index=False)
-        #Solo nos interesan las 5 primeras ids de las variables.
+        sql = text(f"""CREATE TABLE IF NOT EXISTS {str(feature)} (
+            id INTEGER PRIMARY KEY,
+            name TEXT);""")
+        with engine.connect() as conn:
+            conn.execute(sql)
+            conn.commit()
+        try:
+            features_df.to_sql(str(feature), engine, index=False, if_exists='append')
+        except Exception as e:
+            print(f"Exception: {e}")
+        #Nos interesan todos los elementos presentes.
         df_movies[feature] = df_movies[feature].apply(get_list, n=0)
         
     # Crear nuevas variables para las películas
@@ -172,9 +191,32 @@ def main():
     # Valoración ponderada por cantidad de votos
     weight_rating = (df_movies['vote_count']/(df_movies['vote_count']+min_votes))*df_movies['vote_average'] + (min_votes/(df_movies['vote_count']+min_votes))*average_rating_movies
     df_movies['weight_rating'] = round(weight_rating, 2)
-    
     # Guardar resultados
-    df_movies.to_csv('output_data/movies_data_final.csv', index=False)
+    sql = text(f"""CREATE TABLE IF NOT EXISTS movies (
+            id INTEGER PRIMARY KEY,
+            title TEXT,
+            vote_average FLOAT,
+            vote_count INTEGER,
+            genres INTEGER[],
+            keywords INTEGER[],
+            actors INTEGER[],
+            director TEXT,
+            overview TEXT,
+            popularity FLOAT,
+            release_date DATE,
+            runtime FLOAT,
+            status TEXT,
+            metadata_soup TEXT,
+            weight_rating FLOAT);""")
+    with engine.connect() as conn:
+        conn.execute(sql)
+        conn.commit()
+    try:
+        df_movies.to_sql('movies', engine, index=False, if_exists='append', dtype={'actors': sqltypes.ARRAY(sqltypes.INTEGER), 
+                                                                                   'genres': sqltypes.ARRAY(sqltypes.INTEGER), 
+                                                                                   'keywords': sqltypes.ARRAY(sqltypes.INTEGER)})
+    except Exception as e:
+        print(f"Exception: {e}")
 
 if __name__ == "__main__":
     main()
