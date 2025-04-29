@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: database-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database-api
+  template:
+    metadata:
+      labels:
+        app: database-api
+    spec:
+      containers:
+      - name: database-api
+        image: database-api:latest
+        imagePullPolicy: Never
+        env:
+        - name: SERVER
+          value: "postgres-service"
+        ports:
+        - containerPort: 5000
+        readinessProbe:
+          httpGet:
+            path: /movie
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: database-service
+spec:
+  selector:
+    app: database-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000

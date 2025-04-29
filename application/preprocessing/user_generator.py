@@ -6,7 +6,7 @@ import sqlalchemy.types as sqltypes
 
 uid = 'database_admin'
 pwd = '1234'
-server = 'localhost'
+server = 'postgres-service'
 database = 'movies_recomender'
 
 engine = create_engine(f'postgresql+psycopg2://{uid}:{pwd}@{server}:5432/{database}')
@@ -24,9 +24,17 @@ def generate_users():
     try:
         names = ['Jane Doe', 'John Doe', 'Ector Empty']
         df_usuarios = pd.DataFrame({'name': names})
-        df_usuarios.to_sql('users', engine, index=False, if_exists='append')
+        df_usuarios.to_sql(
+            'users', 
+            engine, 
+            index=False, 
+            if_exists='append',
+            method='multi', 
+            chunksize=1000,
+            **dtype={'name': sqltypes.TEXT}**
+        )
     except Exception as e:
-        print(f"Excepction: {e}")
+        print(f"Error al insertar usuarios: {e}")
     
     
 def make_user_watch_movies(user_id, genres_filters, keyword_filters):

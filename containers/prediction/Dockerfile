@@ -1,28 +1,24 @@
-# build imagen local:
-# docker build -f containers/prediction/Dockerfile -t predicion_image .
+# containers/prediction/Dockerfile
+FROM python:3.9-slim
 
-# Imagen base de Python
-FROM python:3.13
+WORKDIR /app
 
-# Crear directorio de trabajo
-WORKDIR /application
-
-# Instalar dependencias del sistema
-#RUN apt-get update 
-#RUN apt-get install
-
-# Copiar los archivos necesarios
 COPY containers/prediction/requirements.txt .
-COPY application/api/prediction_api.py .
-COPY application/model/ application/model
-# TODO quitar si se pasa a BBDD SQL
-COPY output_data/ output_data
 
-# Instalar dependencias
-RUN pip3 install -r requirements.txt
+RUN apt-get update && apt-get install -y \
+    gcc \
+    python3-dev \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Exponer el puerto que Flask va a usar
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar toda la estructura de la aplicación
+COPY application/ ./application/
+
 EXPOSE 5000
 
-# Comando por defecto para ejecutar la aplicación
-CMD ["python", "prediction_api.py"]
+# Añadir el directorio al PYTHONPATH
+ENV PYTHONPATH=/app
+
+CMD ["python", "./application/api/prediction_api.py"]
