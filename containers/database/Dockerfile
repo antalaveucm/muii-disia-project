@@ -1,25 +1,20 @@
-# build imagen local:
-# docker build -f containers/database/Dockerfile -t database_image .
+# containers/database/Dockerfile
+FROM python:3.9-slim
 
-# Imagen base de Python
-FROM python:3.13-alpine
+WORKDIR /app
 
-# Crear directorio de trabajo
-WORKDIR /application
-
-# Instalar dependencias del sistema
-RUN apt-get update 
-RUN apt-get install
-
-# Copiar los archivos necesarios
 COPY containers/database/requirements.txt .
-COPY application/api/database_api.py .
 
-# Instalar dependencias
+# Instalar dependencias del sistema (¡AÑADE gcc y python3-dev!)
+RUN apt-get update && apt-get install -y \
+    gcc \
+    python3-dev \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Exponer el puerto que Flask va a usar
-EXPOSE 5000
+COPY application/api/database_api.py .
 
-# Comando por defecto para ejecutar la aplicación
+EXPOSE 5000
 CMD ["python", "database_api.py"]

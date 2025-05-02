@@ -8,7 +8,7 @@ import sqlalchemy.types as sqltypes
 
 uid = 'database_admin'
 pwd = '1234'
-server = 'localhost'
+server = 'postgres-service'
 database = 'movies_recomender'
 
 engine = create_engine(f'postgresql+psycopg2://{uid}:{pwd}@{server}:5432/{database}')
@@ -125,7 +125,7 @@ def process_crew(crew_str):
 # Procesamiento principal
 def process_credits():
     # Cargar datos
-    df_credits = pd.read_csv("data/tmdb_5000_credits.csv")
+    df_credits = pd.read_csv("/tmp/tmdb_5000_credits.csv")
     
     # Procesar
     df_credits['actors'] = df_credits['cast'].apply(lambda x: json.dumps(process_cast(x), ensure_ascii=False))
@@ -136,7 +136,7 @@ def process_credits():
 
 def main():
     # Cargar datos
-    df = pd.read_csv("data/tmdb_5000_movies.csv")
+    df = pd.read_csv("/tmp/tmdb_5000_movies.csv")
     # Unir ambas bases de datos para tener datos más completos
     df_credits = process_credits()
     df_credits.rename(columns={'movie_id': 'id'}, inplace=True)

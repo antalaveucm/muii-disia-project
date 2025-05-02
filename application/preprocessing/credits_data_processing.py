@@ -86,7 +86,7 @@ def process_crew(crew_str):
 # 5. Procesamiento principal
 def main():
     # Cargar datos
-    df = pd.read_csv("data/tmdb_5000_credits.csv")
+    df = pd.read_csv("/tmp/tmdb_5000_credits.csv")
     
     # Procesar
     df['actors'] = df['cast'].apply(lambda x: json.dumps(process_cast(x), ensure_ascii=False))
