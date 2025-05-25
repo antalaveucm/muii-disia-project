@@ -1,0 +1,5 @@
+prometheus_client==0.22.0
+psutil==7.0.0
+pandas==2.2.3
+psycopg2==2.9.10
+SQLAlchemy==2.0.40
