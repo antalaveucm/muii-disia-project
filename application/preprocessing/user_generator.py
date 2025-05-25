@@ -1,15 +1,24 @@
 import pandas as pd
 import numpy as np
+from datetime import date, timedelta
 
 from sqlalchemy import create_engine, text
 import sqlalchemy.types as sqltypes
 
 uid = 'database_admin'
 pwd = '1234'
-server = 'postgres-service'
+server = 'postgres-service' # localhost (pruebas en local), postgres-service (kubernetes)
 database = 'movies_recomender'
 
 engine = create_engine(f'postgresql+psycopg2://{uid}:{pwd}@{server}:5432/{database}')
+
+def random_date_from_Xdays_to_today(days_v, size):
+    random_dates_list = list()
+    for _ in range(0,size):
+        passdate = date.today() - timedelta(days=days_v)
+        random_days = np.random.randint(0, days_v)
+        random_dates_list.append(passdate + timedelta(days=random_days))
+    return random_dates_list
 
 def generate_users():
     #Crear tabla de usuarios
@@ -31,7 +40,7 @@ def generate_users():
             if_exists='append',
             method='multi', 
             chunksize=1000,
-            **dtype={'name': sqltypes.TEXT}**
+            dtype={'name': sqltypes.TEXT}
         )
     except Exception as e:
         print(f"Error al insertar usuarios: {e}")
@@ -43,6 +52,7 @@ def make_user_watch_movies(user_id, genres_filters, keyword_filters):
         movie_id INTEGER,
         vote FLOAT,
         visualized FLOAT,
+        date DATE,
         FOREIGN KEY (movie_id) REFERENCES movies(id),
         FOREIGN KEY (user_id) REFERENCES users(id));""")
     with engine.connect() as conn:
@@ -73,6 +83,7 @@ def make_user_watch_movies(user_id, genres_filters, keyword_filters):
     np.random.seed(0)
     df_historial['vote'] = np.random.uniform(7, 10,size=df_historial.shape[0])
     df_historial['visualized'] = np.random.uniform(0.7, 1,size=df_historial.shape[0])
+    df_historial['date'] = random_date_from_Xdays_to_today(10,df_historial.shape[0])
     try:
         df_historial.to_sql('users_watch_history', engine, index=False, if_exists='append', dtype={'user_id': sqltypes.INTEGER, 'movie_id': sqltypes.INTEGER})
     except Exception as e:
