@@ -32,9 +32,9 @@ def monitor_user_engagement():
 
     if df_visualized.empty:
         # Si no hay datos eso quiere decir que no hay ningun usuario viendo películas.
-        engagement = 0
+        engagement.set(0)
     else:
-        engagement = round(df_visualized.mean().iloc[0], 2)
+        engagement.set(round(df_visualized.mean().iloc[0], 2))
 
     # Prints para comprobar que funciona.
     #print(f"User engagement: {engagement}")
