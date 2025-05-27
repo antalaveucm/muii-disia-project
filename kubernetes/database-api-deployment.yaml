@@ -15,15 +15,19 @@ spec:
       containers:
       - name: database-api
         image: database-api:latest
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
         env:
         - name: SERVER
           value: "postgres-service"
+        - name: FLASK_ENV
+          value: development
+        - name: DATABASE_URL
+          value: postgresql+psycopg2://database_admin:1234@postgres-service:5432/movies_recommender
         ports:
         - containerPort: 5000
         readinessProbe:
           httpGet:
-            path: /movie
+            path: /health
             port: 5000
           initialDelaySeconds: 10
           periodSeconds: 5

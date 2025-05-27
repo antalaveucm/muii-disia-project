@@ -8,7 +8,7 @@ import sqlalchemy.types as sqltypes
 uid = 'database_admin'
 pwd = '1234'
 server = 'postgres-service' # localhost (pruebas en local), postgres-service (kubernetes)
-database = 'movies_recomender'
+database = 'movies_recommender'
 
 engine = create_engine(f'postgresql+psycopg2://{uid}:{pwd}@{server}:5432/{database}')
 

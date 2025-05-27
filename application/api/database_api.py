@@ -6,7 +6,7 @@ import sqlalchemy.types as sqltypes
 uid = 'database_admin'
 pwd = '1234'
 server = 'localhost'
-database = 'movies_recomender'
+database = 'movies_recommender'
 
 engine = create_engine(f'postgresql+psycopg2://{uid}:{pwd}@{server}:5432/{database}')
 
@@ -42,6 +42,9 @@ def user_get():
             "mensaje": "Error al acceder a la base de datos"
         }), 500
 
+@app.route("/health")
+def health():
+    return "OK", 200
 
 # POST user
 # ejemplo llamada local: 
@@ -57,7 +60,7 @@ def user_post():
     }])
     try:
         user_history_entry.to_sql('users_watch_history', engine, index=False, if_exists='append', dtype={'user_id': sqltypes.INTEGER, 'movie_id': sqltypes.INTEGER})
-        return jsonify({"mensaje": f"Valoracion de la pelicula {data["movie_id"]}, creada para el usuario {data["user_id"]}"}), 201
+        return jsonify({"mensaje": f"Valoracion de la pelicula {data['movie_id']}, creada para el usuario {data['user_id']}"}), 201
     except exc.IntegrityError as e:
         # Likely a foreign key constraint failure (user/movie ID doesn't exist)
         return jsonify({
@@ -103,6 +106,10 @@ def movie_get():
         return jsonify({
             "mensaje": "Error al acceder a la base de datos."
         }), 500
+
+    except Exception as e:
+        app.logger.exception("Fallo /movie")   # <- imprime traza
+        return jsonify({"mensaje": "Error al acceder a la base de datos."}), 501
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

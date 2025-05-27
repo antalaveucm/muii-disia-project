@@ -1,7 +1,26 @@
+# ---------- PersistentVolumeClaim ----------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  labels:
+    app: postgres
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi            # tamaño del disco; ajústalo si necesitas más
+  # Sin storageClassName → Minikube usará la clase por defecto (“standard”)
+
+---
+# ---------- Deployment ----------
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
+  labels:
+    app: postgres
 spec:
   replicas: 1
   selector:
@@ -12,36 +31,42 @@ spec:
       labels:
         app: postgres
     spec:
+      # Garantiza que el volumen quede accesible al UID/GID 999 (usuario postgres)
+      securityContext:
+        fsGroup: 999          # grupo del proceso postgres dentro del contenedor
       containers:
       - name: postgres
-        image: custom-postgres:latest
-        imagePullPolicy: Never 
-        env:
-        - name: POSTGRES_DB
-          value: "movies_recomender"
-        - name: POSTGRES_USER
-          value: "database_admin"
-        - name: POSTGRES_PASSWORD
-          value: "1234"
+        image: postgres:15-alpine          # versión ligera y actual
+        imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 5432
+          - containerPort: 5432
+        env:
+          - name: POSTGRES_USER
+            value: database_admin
+          - name: POSTGRES_PASSWORD
+            value: "1234"
+          - name: POSTGRES_DB
+            value: movies_recommender
         volumeMounts:
-        - name: postgres-storage
-          mountPath: /var/lib/postgresql/data
+          - name: postgres-data
+            mountPath: /var/lib/postgresql/data   # directorio de datos
       volumes:
-      - name: postgres-storage
-        persistentVolumeClaim:
-          claimName: postgres-pvc
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: postgres-pvc
 
 ---
+# ---------- Service ----------
 apiVersion: v1
 kind: Service
 metadata:
   name: postgres-service
+  labels:
+    app: postgres
 spec:
+  type: ClusterIP
   selector:
     app: postgres
   ports:
-    - protocol: TCP
-      port: 5432
+    - port: 5432
       targetPort: 5432

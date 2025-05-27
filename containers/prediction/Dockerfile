@@ -16,6 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar toda la estructura de la aplicación
 COPY application/ ./application/
 
+
 EXPOSE 5000
 
 # Añadir el directorio al PYTHONPATH

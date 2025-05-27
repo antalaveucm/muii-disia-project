@@ -1,0 +1,15 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-init
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: init
+        image: db-init:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: DB_URL
+          value: postgresql://database_admin:1234@postgres-service:5432/movies_recommender

@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitoring-service
+  labels:
+    app: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: monitoring
+  template:
+    metadata:
+      labels:
+        app: monitoring
+      annotations:
+        prometheus.io/scrape: "true" # Indicamos a Prometheus que scrapee este pod
+        prometheus.io/port: "8000" # Puerto donde expone métricas
+        prometheus.io/path: "/metrics" # Ruta de métricas (opcional, /metrics por defecto)
+    spec:
+      containers:
+      - name: monitoring
+        image: monitoring:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        env:
+        - name: UID # Usuario DB
+          value: "databse_admin"
+        - name: PWD # Password DB
+          value: "1234"
+        - name: DB_SERVER # Host del PostgreSQL dentro del cluster
+          value: "postgres-service"
+        - name: DB_NAME # Nombre de la base de datos
+          value: "movies_recommender"

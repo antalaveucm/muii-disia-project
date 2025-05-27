@@ -1,6 +1,7 @@
 import pandas as pd
 import time
 import numpy as np
+import os
 from datetime import date, timedelta
 
 from sqlalchemy import create_engine, text
@@ -11,8 +12,9 @@ from prometheus_client import Gauge, start_http_server
 
 uid = 'database_admin'
 pwd = '1234'
-server = 'localhost' # localhost (pruebas en local), postgres-service (kubernetes)
-database = 'movies_recomender'
+# server = 'localhost' # localhost (pruebas en local), postgres-service (kubernetes)
+server = os.getenv('DB_SERVER', 'postgres-service')  # Esto debería usar postgres-service
+database = 'movies_recommender'
 
 engine = create_engine(f'postgresql+psycopg2://{uid}:{pwd}@{server}:5432/{database}')
 
